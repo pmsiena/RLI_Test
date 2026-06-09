@@ -1,15 +1,13 @@
-create or replace view RLI_TEST.STAGE.CLAIMS_DQ_V(
-	CLAIM_ID,
+create or replace view RLI_TEST.STAGE.PAYMENTS_DQ_V(
+	PAYMENT_ID,
 	POLICY_ID,
-	CLAIM_DATE,
-	CLAIM_AMOUNT,
-	CLAIM_STATUS,
+	PAYMENT_DATE,
+	PAYMENT_AMOUNT,
 	_INSRT_TS
 ) as
-    select * from RLI_TEST.RAW.CLAIMS
+    select * from RLI_TEST.RAW.PAYMENTS
     minus 
-    select * from RLI_TEST.STAGE.CLAIMS_V;
-
+    select * from RLI_TEST.STAGE.PAYMENTS_V;
 
 -- Note: MINUS approach shows rejected rows without dq_reason context.
 -- A tagged view pattern would provide more actionable audit detail

@@ -8,9 +8,16 @@ create or replace view RLI_TEST.STAGE.CLAIMS_V(
 ) as
     select cla.* 
     from RLI_TEST.RAW.CLAIMS cla
-    left join rli_test.raw.policies pol on pol.policy_id = cla.policy_id
-    where 
-        pol.policy_id is not null
-        --removes individual instance of missing foreign key
-    -- QUALIFY COUNT(*) OVER (PARTITION BY cla.claim_id) = 1;
-    -- primary key qualifier not needed for existing dataset
+    where
+    -- check against STAGE not RAW 
+    -- excludes claims whose policies were filtered out for data quality reasons
+    cla.policy_id IN (
+        SELECT policy_id 
+        FROM RLI_TEST.STAGE.POLICIES_V
+    )
+    AND cla.claim_id NOT IN (
+        SELECT claim_id
+        FROM RLI_TEST.RAW.CLAIMS
+        GROUP BY claim_id
+        HAVING COUNT(*) > 1
+    )

@@ -45,9 +45,10 @@ select
     payment_total, 
     endorsement_total,
     pol.premium * (
-    DATEDIFF('day',  pol.effective_date, LEAST(CURRENT_DATE,  pol.expiration_date))
-    /
-    DATEDIFF('day',  pol.effective_date,  pol.expiration_date)
+        DIV0(
+            DATEDIFF('day',  pol.effective_date, LEAST(CURRENT_DATE,  pol.expiration_date)),
+            DATEDIFF('day',  pol.effective_date,  pol.expiration_date)
+        )
     )     AS prorated_premium,
     pol.POLICY_ID, pol.CUSTOMER_ID, pol.POLICY_TYPE, pol.EFFECTIVE_DATE, pol.EXPIRATION_DATE, pol.PREMIUM,
     cust.CUSTOMER_NAME, cust.STATE, cust.INDUSTRY

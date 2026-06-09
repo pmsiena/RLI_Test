@@ -15,7 +15,7 @@ create or replace view RLI_TEST.MART.PAYMENT_CLAIMS_TREND_V(
 with calendar AS (
 --useful to see the full time series and takes the load off analytics solutions
 SELECT 
-DATEADD('month', ROW_NUMBER() OVER (ORDER BY 1) - 1, '2025-05-01')::DATE AS month_start --min month should not change
+DATEADD('month', ROW_NUMBER() OVER (ORDER BY 1) - 1, '2024-05-01')::DATE AS month_start --min month should not change
 FROM TABLE(GENERATOR(ROWCOUNT => 120))  -- Rowcount needs to be hardcoded in Snowflake. 120 = 10 years, more than enough
 QUALIFY month_start <= CURRENT_DATE()
 )
@@ -70,8 +70,7 @@ DATE_TRUNC('month', payment_date),
     pol.policy_type
 )
 
-select 
-    cal.month_start,
+select cal.month_start,
     seg.policy_type, seg.industry, seg.state,
     COALESCE(mc.claim_count, 0)             AS claim_count,
     COALESCE(mc.claim_total, 0)             AS claim_total,

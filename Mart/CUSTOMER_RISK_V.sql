@@ -52,8 +52,8 @@ WITH customer_rollup AS (
         -- claims
         SUM(closed_claim_total)                     AS total_closed_claims,
         SUM(op_claim_total)                         AS total_open_claims,
-        SUM(closed_claim_total) 
-            + SUM(op_claim_total)                   AS total_claims,
+        coalesce(SUM(closed_claim_total),0) 
+            + coalesce(SUM(op_claim_total),0)       AS total_claims,
 
         -- net position
 
@@ -79,13 +79,14 @@ WITH customer_rollup AS (
 ,risk_quantities AS (
     SELECT
         *,
+
         -- derived ratios
         DIV0(total_claims, 
             total_adjusted_premium)                 AS loss_ratio,
         DIV0(total_open_claims, 
             total_adjusted_premium)                 AS open_exposure_ratio,
         DIV0(total_payments_collected, 
-            total_adjusted_premium)                          AS collection_ratio,
+            total_adjusted_premium)                 AS collection_ratio,
         DIV0(total_claims, 
             NULLIF(total_policy_count, 0))          AS avg_claims_per_policy,
         total_adjusted_premium 
@@ -95,7 +96,6 @@ WITH customer_rollup AS (
         -- CASE WHEN DIV0(total_claims, 
         --     total_adjusted_premium) > 1.0
         --     THEN 1 ELSE 0 END                       AS flag_loss_ratio,
-        --Not included as its very similar to flag_negative_position, but just wanted to call out its absence.
 
         CASE WHEN DIV0(total_open_claims, 
             NULLIF(total_claims, 0)) > 0.5
@@ -114,7 +114,7 @@ WITH customer_rollup AS (
         CASE WHEN DIV0(total_claims,
             NULLIF(total_policy_count, 0)) > 2
             THEN 1 ELSE 0 END                       AS flag_high_frequency
-            --flag if customer claim quantity is high
+            --flag if customer claim quantity is high. Similar to flag loss ratio.
 
     FROM customer_rollup
 )
@@ -123,7 +123,6 @@ WITH customer_rollup AS (
 select 
     *,
     flag_open_exposure+flag_collection+flag_negative_position+flag_high_frequency as risk_score
-    --This could be duplicated in the above. However, duplicate copies of all metrics would need to be maintained
 from risk_quantities
 )
 

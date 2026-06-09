@@ -1,5 +1,5 @@
 create or replace view RLI_TEST.MART.PROFITABILITY_MONITOR_V(
-	REPORT_MONTH,
+	EFFECTIVE_MONTH,
 	POLICY_TYPE,
 	POLICY_COUNT,
 	PREMIUM,
@@ -38,22 +38,21 @@ WITH monthly_totals AS (
         -- claims
         SUM(pol.closed_claim_total)                     AS closed_claims,
         SUM(pol.op_claim_total)                         AS open_claims,
-        SUM(pol.closed_claim_total)
-            + SUM(pol.op_claim_total)                   AS total_claims,
+        COALESCE(SUM(pol.closed_claim_total),0)
+            + COALESCE(SUM(pol.op_claim_total),0)       AS total_claims,
 
         -- profitability
         SUM(pol.prorated_premium)
             + COALESCE(SUM(pol.endorsement_total), 0)
-            - SUM(pol.closed_claim_total)
-            - SUM(pol.op_claim_total)                   AS underwriting_profit,
+            - COALESCE(SUM(pol.closed_claim_total),0)
+            - COALESCE(SUM(pol.op_claim_total),0)                   AS underwriting_profit,
 
         -- collection gap
         SUM(pol.premium)
-            - SUM(pol.payment_total)                    AS collection_gap
+            - coalesce(SUM(pol.payment_total),0)                    AS collection_gap
 
     FROM RLI_TEST.MART.POLICY_TOTALS_V pol
-    GROUP BY DATE_TRUNC('month', pol.effective_date), pol.policy_type
-
+    GROUP BY DATE_TRUNC('month', pol.effective_date),pol.policy_type
 )
 
 SELECT
@@ -92,7 +91,7 @@ SELECT
     -- loss ratio
     DIV0(total_claims, adjusted_premium)                AS loss_ratio,
 
-    -- rolling loss ratio
+    -- rolling loss ratio (cumulative)
     -- answer to profitability status and claims exposure over time
     DIV0(
         SUM(total_claims) OVER (
